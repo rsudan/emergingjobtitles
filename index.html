@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weak Signals: Future of Work Analyzer</title>
+    <style>
+        :root {
+            --navy: #002B5C;
+            --navy-hover: #003d7a;
+            --gray-text: #374151;
+            --gray-light: #E5E7EB;
+            --gray-bg: #F9FAFB;
+            --success: #00A758;
+            --warning: #F59E0B;
+            --error: #DC2626;
+            --white: #FFFFFF;
+            --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--white);
+            color: var(--gray-text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Typography */
+        h1 { font-size: 24px; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+        h2 { font-size: 18px; font-weight: 600; color: var(--navy); margin-bottom: 16px; }
+        h3 { font-size: 16px; font-weight: 600; color: var(--navy); }
+        .subtitle { font-size: 14px; color: #6B7280; margin-bottom: 32px; }
+
+        /* Components: Buttons */
+        .btn {
+            height: 40px;
+            padding: 0 20px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background-color: var(--navy); color: var(--white); }
+        .btn-primary:hover:not(:disabled) { background-color: var(--navy-hover); }
+        .btn-primary:disabled { background-color: #9CA3AF; cursor: not-allowed; }
+
+        .btn-secondary { background-color: var(--white); border: 1px solid var(--navy); color: var(--navy); }
+        .btn-secondary:hover:not(:disabled) { background-color: var(--gray-bg); }
+
+        .btn-text { background: none; color: var(--navy); padding: 0; height: auto; text-decoration: underline; }
+        .btn-icon { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--navy); padding: 8px; }
+
+        /* Components: Inputs */
+        .input-group { margin-bottom: 16px; }
+        .label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-text); margin-bottom: 6px; }
+        
+        input[type="text"], input[type="password"], select, textarea {
+            width: 100%;
+            height: 40px;
+            padding: 8px 12px;
+            border: 1px solid var(--gray-light);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: var(--font-main);
+            color: var(--gray-text);
+        }
+        
+        textarea { height: auto; min-height: 100px; }
+        input:focus, select:focus, textarea:focus { outline: 2px solid var(--navy); border-color: transparent; }
+
+        /* Search Panel */
+        .search-panel {
+            background-color: var(--white);
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .search-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        /* Slider */
+        .range-container { margin-top: 8px; }
+        input[type=range] { width: 100%; height: 6px; background: var(--gray-light); border-radius: 3px; outline: none; -webkit-appearance: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--navy); border-radius: 50%; cursor: pointer; }
+
+        /* Results */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .result-card {
+            background: var(--white);
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: box-shadow 0.2s;
+        }
+
+        .result-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .card-meta { display: flex; gap: 12px; font-size: 12px; color: #6B7280; margin-bottom: 16px; }
+        .card-tag { background: var(--gray-bg); padding: 4px 8px; border-radius: 4px; }
+        
+        .score-badge {
+            background-color: var(--gray-bg);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            color: var(--navy);
+            border: 1px solid var(--gray-light);
+        }
+        .score-high { color: var(--success); border-color: var(--success); background-color: #ECFDF5; }
+        .score-med { color: var(--warning); border-color: var(--warning); background-color: #FFFBEB; }
+
+        .card-body { display: none; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--gray-light); }
+        .card-body.open { display: block; animation: fadeIn 0.3s ease; }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .analysis-box h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #6B7280; margin-bottom: 8px; }
+        .analysis-box p { font-size: 14px; margin-bottom: 8px; }
+
+        .source-list { background: var(--gray-bg); padding: 16px; border-radius: 6px; }
+        .source-item { margin-bottom: 12px; font-size: 13px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; }
+        .source-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .source-link { color: var(--navy); font-weight: 500; text-decoration: none; }
+        .source-link:hover { text-decoration: underline; }
+        .source-meta { font-size: 11px; color: #9CA3AF; margin-top: 4px; }
+
+        /* Footer */
+        .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--gray-light); display: flex; justify-content: space-between; font-size: 12px; color: #9CA3AF; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .status-connected { background-color: var(--success); }
+        .status-disconnected { background-color: var(--error); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: var(--white);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-light); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 20px 24px; border-top: 1px solid var(--gray-light); display: flex; justify-content: flex-end; gap: 12px; }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Prompt Editor specific */
+        .prompt-item { border: 1px solid var(--gray-light); border-radius: 6px; margin-bottom: 12px; overflow: hidden; }
+        .prompt-header { padding: 12px 16px; background: var(--gray-bg); cursor: pointer; display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
+        .prompt-content { padding: 16px; display: none; }
+        .prompt-content.show { display: block; }
+        .var-tag { display: inline-block; background: #DBEAFE; color: #1E40AF; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <h1>Weak Signals</h1>
+            <p class="subtitle">Job Title Discovery & Analysis Tool</p>
+        </div>
+        <button class="btn-icon" onclick="openSettings()">⚙️</button>
+    </div>
+
+    <!-- Search Panel -->
+    <div class="search-panel">
+        <div class="search-grid">
+            <div class="input-group">
+                <label class="label">Industry Sector</label>
+                <input type="text" id="sectorInput" placeholder="e.g. Climate Tech, Synthetic Biology" value="">
+            </div>
+            <div class="input-group">
+                <label class="label">Geographic Region</label>
+                <select id="regionInput">
+                    <option value="Global">Global</option>
+                    <option value="North America">North America</option>
+                    <option value="Europe">Europe</option>
+                    <option value="Asia Pacific">Asia Pacific</option>
+                    <option value="Africa">Africa</option>
+                    <option value="Latin America">Latin America</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label class="label">Time Period</label>
+                <select id="timeframeInput">
+                    <option value="Past 3 months">Past 3 months</option>
+                    <option value="Past 6 months">Past 6 months</option>
+                    <option value="Past 12 months" selected>Past 12 months</option>
+                    <option value="Past 24 months">Past 24 months</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group" style="max-width: 300px; margin-bottom: 24px;">
+            <label class="label">Number of Results: <span id="rangeValue">10</span></label>
+            <div class="range-container">
+                <input type="range" id="resultsRange" min="5" max="20" value="10" oninput="document.getElementById('rangeValue').innerText = this.value">
+            </div>
+        </div>
+
+        <div style="display:flex; gap: 12px;">
+            <button class="btn btn-primary" id="searchBtn" onclick="startDiscovery()">
+                <span id="searchSpinner" class="spinner hidden"></span>
+                <span id="searchBtnText">Search for Emerging Titles</span>
+            </button>
+            <button class="btn btn-secondary" id="exportBtn" onclick="exportResults()" disabled>Export Results</button>
+        </div>
+        <div id="progressText" style="margin-top: 12px; font-size: 13px; color: var(--navy); display:none;">Initializing...</div>
+    </div>
+
+    <!-- Results Area -->
+    <div id="resultsContainer" class="hidden">
+        <div class="results-header">
+            <h3><span id="resultCount">0</span> Emerging Titles Found</h3>
+            <div style="font-size: 12px; color: #6B7280;">
+                Sorted by Weak Signal Score
+            </div>
+        </div>
+        <div id="resultsList"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" style="text-align: center; padding: 60px 0; color: #9CA3AF;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+        <p>Enter search parameters above to discover emerging job titles.</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div>
+            <span class="status-dot status-disconnected" id="apiStatusDot"></span>
+            <span id="apiStatusText">Not Connected</span>
+        </div>
+        <div id="lastSearchTime">No searches yet</div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Settings</h3>
+            <button class="btn-icon" onclick="closeSettings()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="input-group">
+                <label class="label">Gemini API Key</label>
+                <input type="password" id="apiKeyInput" placeholder="Enter your API key">
+                <p style="font-size: 11px; color: #6B7280; margin-top: 6px;">
+                    ⚠️ Key stored in browser localStorage only. Never sent to our servers.
+                </p>
+            </div>
+            
+            <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--gray-light);">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+                <label class="label" style="margin:0;">Prompt Management</label>
+                <button class="btn btn-secondary" style="height: 32px; font-size: 12px;" onclick="resetPrompts()">Reset All</button>
+            </div>
+
+            <div id="promptList">
+                <!-- Prompts injected via JS -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * Application State & Config
+ */
+const APP_CONFIG = {
+    // Using flash-preview as requested for the environment
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent',
+    fallbackEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+};
+
+const defaultPrompts = {
+    discovery: {
+        name: "Job Title Discovery",
+        vars: ["SECTOR", "REGION", "TIMEFRAME", "NUM"],
+        template: `Search recent job postings, LinkedIn profiles, and industry publications for unusual or newly coined job titles in the SECTOR sector in REGION from the past TIMEFRAME. Focus on titles that combine traditional roles in novel ways, describe entirely new functions, or respond to recent tech/social developments.
+
+Return exactly NUM distinct titles.
+Format the output EXACTLY as follows for each result, with no other text:
+
+TITLE: [Exact Title]
+SOURCE_URL: [URL]
+SOURCE_TYPE: [Type]
+EXCERPT: [Brief excerpt]
+---`
+    },
+    novelty: {
+        name: "Novelty Assessment",
+        vars: ["TITLE", "SOURCES"],
+        template: `Analyze the job title "TITLE".
+Sources: SOURCES
+
+Determine:
+1. Is this genuinely new or rebranded?
+2. When did it first appear?
+3. Distinct characteristics?
+4. Score novelty (1-5, 5=New).
+
+Return in this format:
+ASSESSMENT: [One sentence summary]
+FIRST_APPEARED: [Year/Timeframe]
+DISTINCT: [Key differences]
+SCORE: [1-5]`
+    },
+    trend: {
+        name: "Trend Linkage",
+        vars: ["TITLE", "SECTOR"],
+        template: `For the job title "TITLE" in SECTOR, identify driving trends (Tech, Demographic, Economic, Policy).
+Score transformative potential (1-5).
+
+Return in this format:
+PRIMARY_TREND: [Main trend name]
+TYPE: [Category]
+CONNECTION: [How trend drives role]
+SCORE: [1-5]`
+    },
+    evidence: {
+        name: "Evidence Quality",
+        vars: ["TITLE", "SOURCES"],
+        template: `Evaluate evidence for "TITLE".
+Sources: SOURCES
+
+Score evidence quality (1-5) based on source credibility, diversity, and detailedness.
+
+Return in this format:
+REASONING: [Brief justification]
+SCORE: [1-5]`
+    }
+};
+
+let appState = {
+    apiKey: localStorage.getItem('geminiApiKey') || '',
+    prompts: JSON.parse(localStorage.getItem('customPrompts')) || JSON.parse(JSON.stringify(defaultPrompts)),
+    history: JSON.parse(localStorage.getItem('searchHistory')) || [],
+    currentResults: []
+};
+
+/**
+ * Core Logic: API & Analysis
+ */
+
+async function callGemini(promptText) {
+    if (!appState.apiKey) throw new Error("API Key missing");
+
+    const payload = {
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: { temperature: 0.7 }
+    };
+
+    try {
+        let response = await fetch(`${APP_CONFIG.endpoint}?key=${appState.apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            // Try fallback model if preview model fails (e.g., 404 or 400)
+             response = await fetch(`${APP_CONFIG.fallbackEndpoint}?key=${appState.apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+        
+        if(!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error?.message || "API Error");
+        }
+
+        const data = await response.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    } catch (e) {
+        console.error("Gemini API Error:", e);
+        throw e;
+    }
+}
+
+async function startDiscovery() {
+    const sector = document.getElementById('sectorInput').value;
+    const region = document.getElementById('regionInput').value;
+    const time = document.getElementById('timeframeInput').value;
+    const num = document.getElementById('resultsRange').value;
+
+    if (!sector) return alert("Please enter an industry sector.");
+    if (!appState.apiKey) return openSettings();
+
+    setLoading(true);
+    updateProgress("Discovering emerging titles...");
+    document.getElementById('resultsList').innerHTML = '';
+    appState.currentResults = [];
+
+    try {
+        // Step 1: Discovery
+        const discoveryPrompt = appState.prompts.discovery.template
+            .replace('SECTOR', sector)
+            .replace('REGION', region)
+            .replace('TIMEFRAME', time)
+            .replace('NUM', num);
+
+        const discoveryRaw = await callGemini(discoveryPrompt);
+        const titles = parseDiscovery(discoveryRaw);
+
+        if (titles.length === 0) throw new Error("No titles found. Try broadening criteria.");
+
+        updateProgress(`Found ${titles.length} titles. Analyzing signals...`);
+        document.getElementById('emptyState').classList.add('hidden');
+        document.getElementById('resultsContainer').classList.remove('hidden');
+        document.getElementById('resultCount').innerText = titles.length;
+
+        // Step 2: Analysis (Sequential to avoid rate limits)
+        for (let i = 0; i < titles.length; i++) {
+            updateProgress(`Analyzing ${i + 1} of ${titles.length}: ${titles[i].title}...`);
+            
+            const item = titles[i];
+            const sourceStr = item.sources.map(s => `${s.type}: ${s.url}`).join('\n');
+
+            // Parallel sub-tasks for this single title
+            const [noveltyRes, trendRes, evidenceRes] = await Promise.all([
+                callGemini(appState.prompts.novelty.template.replace('TITLE', item.title).replace('SOURCES', sourceStr)),
+                callGemini(appState.prompts.trend.template.replace('TITLE', item.title).replace('SECTOR', sector)),
+                callGemini(appState.prompts.evidence.template.replace('TITLE', item.title).replace('SOURCES', sourceStr))
+            ]);
+
+            const analysis = {
+                novelty: parseKeyValue(noveltyRes),
+                trend: parseKeyValue(trendRes),
+                evidence: parseKeyValue(evidenceRes)
+            };
+
+            // Calculate Score
+            const nScore = parseFloat(analysis.novelty.SCORE) || 3;
+            const tScore = parseFloat(analysis.trend.SCORE) || 3;
+            const eScore = parseFloat(analysis.evidence.SCORE) || 3;
+            
+            item.analysis = analysis;
+            item.scores = { n: nScore, t: tScore, e: eScore };
+            item.weakSignalScore = ((nScore * 2 + tScore * 2 + eScore) / 5).toFixed(1);
+
+            appState.currentResults.push(item);
+            
+            // Incremental Sort & Render
+            appState.currentResults.sort((a, b) => b.weakSignalScore - a.weakSignalScore);
+            renderResults();
+            
+            // Brief delay to be nice to API
+            await new Promise(r => setTimeout(r, 500));
+        }
+
+        updateProgress("Analysis complete.");
+        saveHistory(sector, region, titles.length);
+        document.getElementById('exportBtn').disabled = false;
+        
+    } catch (e) {
+        alert("Error: " + e.message);
+    } finally {
+        setLoading(false);
+    }
+}
+
+/**
+ * Parsing Logic
+ */
+function parseDiscovery(text) {
+    const items = [];
+    const blocks = text.split('---');
+    
+    blocks.forEach(block => {
+        if (!block.trim()) return;
+        const getVal = (key) => {
+            const regex = new RegExp(`${key}:\\s*(.+)`, 'i');
+            const match = block.match(regex);
+            return match ? match[1].trim() : null;
+        };
+
+        const title = getVal('TITLE');
+        if (title) {
+            items.push({
+                title: title.replace(/\*\*/g, ''), // Remove markdown bold if present
+                sources: [{
+                    url: getVal('SOURCE_URL') || '#',
+                    type: getVal('SOURCE_TYPE') || 'Unknown',
+                    excerpt: getVal('EXCERPT') || ''
+                }]
+            });
+        }
+    });
+    return items;
+}
+
+function parseKeyValue(text) {
+    const obj = {};
+    const lines = text.split('\n');
+    lines.forEach(line => {
+        const splitIdx = line.indexOf(':');
+        if (splitIdx > -1) {
+            const key = line.substring(0, splitIdx).trim().toUpperCase().replace(/\*/g, '');
+            const val = line.substring(splitIdx + 1).trim();
+            obj[key] = val;
+        }
+    });
+    return obj;
+}
+
+/**
+ * UI Functions
+ */
+function renderResults() {
+    const list = document.getElementById('resultsList');
+    list.innerHTML = '';
+
+    appState.currentResults.forEach((item, idx) => {
+        const scoreClass = item.weakSignalScore >= 7.5 ? 'score-high' : 'score-med';
+        
+        const html = `
+        <div class="result-card">
+            <div class="card-header">
+                <div>
+                    <h3>${item.title}</h3>
+                </div>
+                <div class="score-badge ${scoreClass}">${item.weakSignalScore}/10</div>
+            </div>
+            
+            <div class="card-meta">
+                <span class="card-tag">${item.analysis.novelty.ASSESSMENT || 'Emerging Role'}</span>
+                <span class="card-tag">Trend: ${item.analysis.trend.PRIMARY_TREND || 'N/A'}</span>
+            </div>
+
+            <p style="font-size: 14px; margin-bottom: 16px;">
+                ${item.sources[0].excerpt}
+            </p>
+
+            <button class="btn-text" onclick="toggleCard(${idx})">View Analysis & Sources ▼</button>
+
+            <div id="card-body-${idx}" class="card-body">
+                <div class="analysis-grid">
+                    <div class="analysis-box">
+                        <h4>Weak Signal Analysis</h4>
+                        <p><strong>Novelty (${item.scores.n}/5):</strong> ${item.analysis.novelty.DISTINCT || '-'}</p>
+                        <p><strong>Transformative (${item.scores.t}/5):</strong> ${item.analysis.trend.CONNECTION || '-'}</p>
+                        <p><strong>Evidence (${item.scores.e}/5):</strong> ${item.analysis.evidence.REASONING || '-'}</p>
+                    </div>
+                    
+                    <div class="analysis-box">
+                        <h4>Context</h4>
+                        <p><strong>First Appeared:</strong> ${item.analysis.novelty.FIRST_APPEARED || 'Unknown'}</p>
+                        <p><strong>Driver:</strong> ${item.analysis.trend.TYPE || 'General'}</p>
+                    </div>
+                </div>
+
+                <div class="source-list">
+                    <h4 style="font-size:12px; color:#6B7280; margin-bottom:8px;">SOURCES</h4>
+                    ${item.sources.map(s => `
+                        <div class="source-item">
+                            <a href="${s.url}" target="_blank" class="source-link">${s.type} ↗</a>
+                            <div class="source-meta">${s.url.substring(0, 50)}...</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        `;
+        list.innerHTML += html;
+    });
+}
+
+function toggleCard(idx) {
+    const body = document.getElementById(`card-body-${idx}`);
+    body.classList.toggle('open');
+}
+
+function setLoading(isLoading) {
+    const btn = document.getElementById('searchBtn');
+    const spinner = document.getElementById('searchSpinner');
+    const text = document.getElementById('searchBtnText');
+    const progress = document.getElementById('progressText');
+
+    if (isLoading) {
+        btn.disabled = true;
+        spinner.classList.remove('hidden');
+        text.innerText = "Processing...";
+        progress.style.display = 'block';
+    } else {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        text.innerText = "Search for Emerging Titles";
+        // progress.style.display = 'none'; // Keep last status visible
+    }
+}
+
+function updateProgress(msg) {
+    document.getElementById('progressText').innerText = msg;
+}
+
+/**
+ * Settings & Storage
+ */
+function openSettings() {
+    document.getElementById('apiKeyInput').value = appState.apiKey;
+    renderPromptList();
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+function saveSettings() {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (key) {
+        localStorage.setItem('geminiApiKey', key);
+        appState.apiKey = key;
+        updateStatus();
+    }
+    
+    // Save Prompts
+    const inputs = document.querySelectorAll('.prompt-input');
+    inputs.forEach(input => {
+        const id = input.dataset.id;
+        if(appState.prompts[id]) {
+            appState.prompts[id].template = input.value;
+        }
+    });
+    localStorage.setItem('customPrompts', JSON.stringify(appState.prompts));
+    
+    closeSettings();
+}
+
+function updateStatus() {
+    const dot = document.getElementById('apiStatusDot');
+    const text = document.getElementById('apiStatusText');
+    if (appState.apiKey) {
+        dot.className = 'status-dot status-connected';
+        text.innerText = 'API Key Configured';
+    } else {
+        dot.className = 'status-dot status-disconnected';
+        text.innerText = 'No API Key';
+    }
+}
+
+function saveHistory(sector, region, count) {
+    const record = {
+        date: new Date().toISOString(),
+        sector, region, count
+    };
+    appState.history.unshift(record);
+    if (appState.history.length > 20) appState.history.pop();
+    localStorage.setItem('searchHistory', JSON.stringify(appState.history));
+    updateLastSearch();
+}
+
+function updateLastSearch() {
+    if (appState.history.length > 0) {
+        const last = appState.history[0];
+        const date = new Date(last.date).toLocaleDateString();
+        document.getElementById('lastSearchTime').innerText = `Last search: ${last.sector} (${date})`;
+    }
+}
+
+function exportResults() {
+    if (appState.currentResults.length === 0) return;
+    
+    let csv = "Job Title,Weak Signal Score,Novelty Score,Trend Score,Evidence Score,Primary Trend,Sources\n";
+    appState.currentResults.forEach(r => {
+        const sourceUrls = r.sources.map(s => s.url).join(' | ');
+        const row = [
+            `"${r.title}"`,
+            r.weakSignalScore,
+            r.scores.n,
+            r.scores.t,
+            r.scores.e,
+            `"${r.analysis.trend.PRIMARY_TREND || ''}"`,
+            `"${sourceUrls}"`
+        ];
+        csv += row.join(",") + "\n";
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `weak_signals_export_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+}
+
+// Prompt Editor Logic
+function renderPromptList() {
+    const list = document.getElementById('promptList');
+    list.innerHTML = '';
+    
+    Object.entries(appState.prompts).forEach(([key, p]) => {
+        const div = document.createElement('div');
+        div.className = 'prompt-item';
+        div.innerHTML = `
+            <div class="prompt-header" onclick="togglePrompt('${key}')">
+                <span>${p.name}</span>
+                <span>▼</span>
+            </div>
+            <div id="prompt-${key}" class="prompt-content">
+                <div style="margin-bottom:8px;">
+                    ${p.vars.map(v => `<span class="var-tag">${v}</span>`).join('')}
+                </div>
+                <textarea class="prompt-input" data-id="${key}">${p.template}</textarea>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function togglePrompt(key) {
+    document.getElementById(`prompt-${key}`).classList.toggle('show');
+}
+
+function resetPrompts() {
+    if(confirm("Reset all prompts to default?")) {
+        appState.prompts = JSON.parse(JSON.stringify(defaultPrompts));
+        renderPromptList();
+    }
+}
+
+// Init
+window.addEventListener('DOMContentLoaded', () => {
+    updateStatus();
+    updateLastSearch();
+});
+
+</script>
+</body>
+</html>
